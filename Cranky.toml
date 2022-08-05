@@ -1,0 +1,3 @@
+deny = ["clippy::all", "clippy::unwrap_used", "clippy::expect_used"]
+warn = ["clippy::pedantic", "clippy::nursery"]
+allow = ["clippy::missing_errors_doc"]
