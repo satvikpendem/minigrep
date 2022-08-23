@@ -7,15 +7,20 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Self, &'static str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments");
-        }
+    pub fn new(mut args: impl Iterator<Item = String>) -> Result<Self, &'static str> {
+        args.next();
 
-        let query = args[1].clone();
-        let filename = args[2].clone();
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
 
-        let ignore_case = env::var("CASE_SENSITIVE").is_ok();
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a filename string"),
+        };
+
+        let ignore_case = env::var("IGNORE_CASE").is_ok();
 
         Ok(Self {
             query,
@@ -25,7 +30,7 @@ impl Config {
     }
 
     pub fn run(&self) -> Result<(), Box<dyn Error>> {
-        let Config {
+        let Self {
             query,
             filename,
             ignore_case,
@@ -48,17 +53,16 @@ impl Config {
 }
 
 fn _search<'a>(query: &str, contents: &'a str, ignore_case: bool) -> Vec<&'a str> {
-    let mut results: Vec<&str> = Vec::new();
-    contents.lines().for_each(|line| {
-        if ignore_case {
-            if line.to_lowercase().contains(&query.to_lowercase()) {
-                results.push(line);
+    contents
+        .lines()
+        .filter(|line| {
+            if ignore_case {
+                line.to_lowercase().contains(&query.to_lowercase())
+            } else {
+                line.contains(&query)
             }
-        } else if line.contains(&query) {
-            results.push(line);
-        }
-    });
-    results
+        })
+        .collect()
 }
 
 #[must_use]
@@ -74,29 +78,6 @@ pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a st
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::string::ToString;
-
-    #[test]
-    #[allow(clippy::unwrap_used)]
-    fn parses_args() {
-        let args = ["minigrep", "hello", "poem.txt"];
-        Config::new(&args.map(ToString::to_string)).unwrap();
-    }
-
-    #[test]
-    #[should_panic]
-    #[allow(clippy::unwrap_used)]
-    fn not_enough_args() {
-        let args = ["minigrep", "hello"];
-        Config::new(&args.map(ToString::to_string)).unwrap();
-    }
-
-    #[test]
-    #[allow(clippy::unwrap_used)]
-    fn file_not_found() {
-        let args = ["minigrep", "hello", "unknownfile.txt"];
-        Config::new(&args.map(std::string::ToString::to_string)).unwrap();
-    }
 
     #[test]
     fn case_sensitive() {
