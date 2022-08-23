@@ -80,6 +80,36 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::unwrap_used)]
+    fn parses_args() {
+        let args = vec![
+            String::from("minigrep"),
+            String::from("hello"),
+            String::from("poem.txt"),
+        ];
+        Config::new(args.into_iter()).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    #[allow(clippy::unwrap_used)]
+    fn not_enough_args() {
+        let args = vec![String::from("minigrep"), String::from("hello")];
+        Config::new(args.into_iter()).unwrap();
+    }
+
+    #[test]
+    #[allow(clippy::unwrap_used)]
+    fn file_not_found() {
+        let args = vec![
+            String::from("minigrep"),
+            String::from("hello"),
+            String::from("unknown.txt"),
+        ];
+        Config::new(args.into_iter()).unwrap();
+    }
+
+    #[test]
     fn case_sensitive() {
         let query = "duct";
         let contents = "\
